@@ -1,103 +1,5 @@
-﻿#include "ros/ros.h"
-#include "ros/package.h"
-#include "nav_msgs/OccupancyGrid.h"
-#include "nav_msgs/GetMap.h"
-#include "nav_msgs/Path.h"
-#include "std_msgs/Header.h"
-#include "std_msgs/String.h"
-#include "nav_msgs/MapMetaData.h"
-#include "nav_msgs/Odometry.h"
-#include "sensor_msgs/PointCloud.h"
-#include "sensor_msgs/PointCloud2.h"
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <queue>
-#include <geometry_msgs/Pose2D.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/Point.h>
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
-#include <vector>
-#include <iostream>
-#include <string>
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/conversions.h>
-#include <pcl_ros/transforms.h>
-#include <pcl/filters/passthrough.h>
-#include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
-///parameter
+﻿#include "local_map.h"
 
-#define bigger_frame 6
-#define lookforward 200
-#define lookside 60
-int obsatcle_boundary = 15;
-int front_obsatcle_boundary = 30;
-#define occupancy_weight 20
-//#define lidar_gps_offset 1.45 //meter
-#define lidar_gps_offset 0.85 //meter
-int max_global_path = 20; //meter
-//string previous =
-#define min_global_path 2 //meter
-#define PI 3.14159265359
-using namespace std;
-//using namespace cv;
-int erase_path = 15;
-int erase_path_obs = 5;
-int lane_boundary = 7; //pixel, 1 pixel = 0.1m^2
-int side_min_boundary = 8;
-#define side_max_boundary 20
-int front_min_boundary = 13;
-#define front_max_boundary 40
-double between_dist = 3.5;
-int pose_count = 0;
-bool map_loaded = false;
-bool plain_map_loaded = false;
-bool region_map_loaded = false;
-bool global_loaded = false;
-bool avoid_loaded = false;
-string state_string = "go";
-string trffic_state_string = "go";
-const string state_table[6] = {"go","stop","cross_road","wait_for_traffic_light","static_obs","outbreak_obs"};
-string gps_state = "narrow_int";
-ros::Publisher local_path_pub;
-ros::Publisher original_path_pub;
-ros::Publisher local_costmap;
-ros::Publisher local_obstacle_state;
-ros::Publisher start_point_pub;
-ros::Publisher goal_point_pub;
-nav_msgs::Path previous_path;
-int pre_boundary = 0;
-int pre_boundary_f = 0;
-int over_path_count = 0;
-nav_msgs::Path::ConstPtr global_path;
-nav_msgs::Path::ConstPtr avoid_path;
-nav_msgs::Odometry::ConstPtr currentPose;
-nav_msgs::OccupancyGrid global_map;
-nav_msgs::OccupancyGrid plain_map;
-nav_msgs::OccupancyGrid region_map;
-std::queue<nav_msgs::OccupancyGrid> map_queue;
-std::queue<nav_msgs::OccupancyGrid::ConstPtr> path_queue;
-pcl::PointCloud <pcl::PointXYZI> obstacle_pcl;
-cv::Mat previous_obs_image;
-//pixel
-int size_front = lookforward;
-int size_side = lookside;
-int global_path_index = 0;
-const int dx[8] = {-1,-1,-1,0,0,1,1,1};
-const int dy[8] = {-1,0,1,-1,1,-1,0,1};
-const int h_func[8] = {14,10,14,10,10,14,10,14};
-bool shortest_path_searched = false;
-int path_index_end = 0;
-int path_index_start = 0;
-string gps_stable = "stable";
-int under_path = 0;
 void poseCallback(const nav_msgs::Odometry::ConstPtr& msg){
     pose_count++;
     std::queue<nav_msgs::Odometry::ConstPtr> temp_q;
@@ -112,6 +14,7 @@ void poseCallback(const nav_msgs::Odometry::ConstPtr& msg){
     }
     temp_q.pop();
 }
+
 void globalpathCallback(const nav_msgs::Path::ConstPtr& msg)
 {
     if(!global_loaded)
@@ -129,54 +32,31 @@ void obstacleCallback(const sensor_msgs::PointCloud2ConstPtr& scan)
     pcl::fromROSMsg(*scan,obstacle_pcl);
 }
 
-void stateCallback(const std_msgs::StringConstPtr &msg)
-{
-    state_string = msg->data.c_str();
-}
 void trfficstateCallback(const std_msgs::StringConstPtr &msg)
 {
     trffic_state_string = msg->data.c_str();
 }
-int main(int argc, char **argv){
+
+int main(int argc, char **argv)
+{
     ros::init(argc, argv, "local_costmap");
     ros::NodeHandle n;
-    local_path_pub = n.advertise<nav_msgs::Path>("local_path",1);
-    original_path_pub = n.advertise<nav_msgs::Path>("original_path",1);
     local_costmap = n.advertise<nav_msgs::OccupancyGrid>("local_costmap",1);
-    local_obstacle_state = n.advertise<std_msgs::String>("local_obs_state",1);
-    string arg_str = "unknown";
-    cout << argc;
-    if(argc == 2)
-    {
-        arg_str = argv[1];
-    }
-    int tilting = 28;
-    if(arg_str == "final_path")
-    {
-        tilting = 110;
-        lane_boundary = 8;
-        side_min_boundary = 10;
-//        erase_path_obs = 5;
-//        side_min_boundary = side_min_boundary + 5;
-//        between_dist = between_dist + 4.5;
-//        front_min_boundary = front_min_boundary +2;
-//        front_obsatcle_boundary = front_obsatcle_boundary + 10;
-//        obsatcle_boundary = obsatcle_boundary;
-    }
+
     ros::Subscriber global_path_sub = n.subscribe("/global_path",10,globalpathCallback);
-    ros::Subscriber region_state_sub = n.subscribe("/state",10,stateCallback);
-    ros::Subscriber trffic_region_state_sub = n.subscribe("/traffic_region_state",10,trfficstateCallback);
+    // ros::Subscriber region_state_sub = n.subscribe("/state",10,stateCallback);
+    // ros::Subscriber trffic_region_state_sub = n.subscribe("/traffic_region_state",10,trfficstateCallback);
     ros::Subscriber pose_sub = n.subscribe("/gps_utm_odom",10,poseCallback);
     ros::Subscriber obstacle_sub = n.subscribe("/Lidar/obj_pcl",10,obstacleCallback);
     ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/global_map/static_map");
     nav_msgs::GetMap srv;
-    ros::ServiceClient map_client2 = n.serviceClient<nav_msgs::GetMap>("/plain_map/static_map");
-    nav_msgs::GetMap srv_plain;
-    ros::ServiceClient map_client3 = n.serviceClient<nav_msgs::GetMap>("/region_map/static_map");
-    nav_msgs::GetMap srv_region;
+    // ros::ServiceClient map_client2 = n.serviceClient<nav_msgs::GetMap>("/plain_map/static_map");
+    // nav_msgs::GetMap srv_plain;
+    // ros::ServiceClient map_client3 = n.serviceClient<nav_msgs::GetMap>("/region_map/static_map");
+    // nav_msgs::GetMap srv_region;
     std::string file_path = ros::package::getPath("global_path_planner");
-    cv::Mat map_image = cv::imread(file_path+"/map_data/plain_map.png",1);
-    ros::Rate r(10);
+    // cv::Mat map_image = cv::imread(file_path+"/map_data/plain_map.png",1);
+    ros::Rate r(10);//frequency
     bool state_ok = true;
     while (ros::ok())
     {
@@ -197,36 +77,7 @@ int main(int argc, char **argv){
             }
 
         }
-        if(!plain_map_loaded)
-        {
-            if(map_client2.call(srv_plain))
-            {
-                cout << "plain_call!" << endl;
-                plain_map = srv_plain.response.map;
-                plain_map.data = srv_plain.response.map.data;
-                cout << plain_map.info.width << " x " << plain_map.info.height << endl;
-                plain_map_loaded = true;
-            }
-            else {
-                cout << "failed to load plain map!" << endl;
-                r.sleep();
-                continue;
-            }
-        }
-//        if(!region_map_loaded)
-//        {
-//            if(map_client3.call(srv_region))
-//            {
-//                cout << "region_call!" << endl;
-//                region_map = srv_region.response.map;
-//                region_map.data = srv_region.response.map.data;
-//                cout << region_map.info.width << " x " << region_map.info.height << endl;
-//                region_map_loaded = true;
-//            }
-//            else {
-//                cout << "failed to load region map!" << endl;
-//            }
-//        }
+        
         if(pose_count != 0)
         {
             if(state_ok)
@@ -329,7 +180,7 @@ int main(int argc, char **argv){
             {
                 double pcl_x = obstacle_pcl.at(i).x + lidar_gps_offset;
                 double pcl_y = obstacle_pcl.at(i).y;
-
+                
 //                int local_index = temp_local_map.info.width*temp_local_map.info.height - (pixel_x*temp_local_map.info.width + pixel_y) -1;
                 if(!(pcl_x >-5.0 && pcl_x<1.5 &&pcl_y > -0.5 &&pcl_y<0.5))
                 {
@@ -362,41 +213,31 @@ int main(int argc, char **argv){
                             unsigned int pclmap_y = (global_y_ - plain_map.info.origin.position.y)/resolution;
                             int map_index = pclmap_y*plain_map.info.width + pclmap_x;
                             cv::Vec3b out_of_map;
-                            if(pclmap_x < map_image.cols && map_image.rows - pclmap_y < map_image.rows && pclmap_x>0 && map_image.rows - pclmap_y>0)
-                            {
-                                out_of_map = map_image.at<cv::Vec3b>(map_image.rows - pclmap_y,pclmap_x);
-                            }
-//                            cout << map_image.cols;
-                            int point = (out_of_map[0] + out_of_map[1] + out_of_map[2]) / 3;
-//                            int point = (int)plain_map.data.at(map_index);
-//                            cout << point << "xy"<< global_x_ << ", "<<global_y_ << "\n";
-                            if(point == 255)
-                            {
-                                for(int r = 1;r<obsatcle_boundary;r = r+2)
-                                {
-                                    //cv::ellipse(temp_obstacle_image, cv::Point(pixel_y,pixel_x),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),28 + drawing_angle,0,360,cv::Scalar(95),2,CV_FILLED);
-                                    if(obsatcle_boundary-r > 2)
-                                    {
-                                        cv::ellipse(temp_obstacle_image, cv::Point(pixel_y,pixel_x),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),tilting + drawing_angle,0,360,cv::Scalar(95),3,CV_FILLED);
-                                        if(arg_str == "final_path")
-                                        {
-                                            cv::ellipse(temp_obstacle_image, cv::Point(pixel_y2,pixel_x2),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),tilting + drawing_angle,0,360,cv::Scalar(95),3,CV_FILLED);
-                                            cv::ellipse(temp_obstacle_image, cv::Point(pixel_y3,pixel_x3),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),tilting + drawing_angle,0,360,cv::Scalar(95),3,CV_FILLED);
-                                            cv::ellipse(temp_obstacle_image, cv::Point(pixel_y4,pixel_x4),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),tilting + drawing_angle,0,360,cv::Scalar(95),3,CV_FILLED);
-                                        }
-                                    }
+                            
+                            // if(point == 255)
+                            // {
+                            //     for(int r = 1;r<obsatcle_boundary;r = r+2)
+                            //     {
+                            //         //cv::ellipse(temp_obstacle_image, cv::Point(pixel_y,pixel_x),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),28 + drawing_angle,0,360,cv::Scalar(95),2,CV_FILLED);
+                            //         if(obsatcle_boundary-r > 2)
+                            //         {
+                            //             cv::ellipse(temp_obstacle_image, cv::Point(pixel_y,pixel_x),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),tilting + drawing_angle,0,360,cv::Scalar(95),3,CV_FILLED);
+                            //             if(arg_str == "final_path")
+                            //             {
+                            //                 cv::ellipse(temp_obstacle_image, cv::Point(pixel_y2,pixel_x2),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),tilting + drawing_angle,0,360,cv::Scalar(95),3,CV_FILLED);
+                            //                 cv::ellipse(temp_obstacle_image, cv::Point(pixel_y3,pixel_x3),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),tilting + drawing_angle,0,360,cv::Scalar(95),3,CV_FILLED);
+                            //                 cv::ellipse(temp_obstacle_image, cv::Point(pixel_y4,pixel_x4),cv::Size(obsatcle_boundary-r,front_obsatcle_boundary-r),tilting + drawing_angle,0,360,cv::Scalar(95),3,CV_FILLED);
+                            //             }
+                            //         }
 
-                                }
-                                cv::circle(temp_obstacle_image, cv::Point(pixel_y,pixel_x),obsatcle_boundary, cv::Scalar(95),CV_FILLED, 8);
+                            //     }
+                            //     cv::circle(temp_obstacle_image, cv::Point(pixel_y,pixel_x),obsatcle_boundary, cv::Scalar(95),CV_FILLED, 8);
 
-                            }
+                            // }
     //                        plain_map.data.at(map_index) = plain_map.data.at(map_index)+10;
 
                         }
-                        if(trffic_state_string == "outbreak_obs"||state_string == "stop")
-                        {
-                            cv::circle(temp_obstacle_image, cv::Point(pixel_y,pixel_x),8, cv::Scalar(95),CV_FILLED, 8);
-                        }
+                        
                         //ellipse(Mat& img, Point center, Size axes, double angle, double startAngle, double endAngle, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
                     }
                 }
@@ -713,7 +554,7 @@ int main(int argc, char **argv){
             if(stuck_count > 0)
             {
                 cout << "\n \n stuck! make new path!\n\n";
-                cout << arg_str;
+                // cout << arg_str;
 
                 std_msgs::String obs_state;
                 obs_state.data = "stuck";
@@ -730,7 +571,7 @@ int main(int argc, char **argv){
             }
             else {
                 cout << "\n \n obstacle free!\n\n";
-                cout << arg_str;
+                // cout << arg_str;
                 std_msgs::String obs_state;
                 obs_state.data = "free";
                 local_obstacle_state.publish(obs_state);
