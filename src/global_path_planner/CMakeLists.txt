@@ -125,7 +125,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -136,20 +136,6 @@ include_directories(
 add_executable(local_costmap src/local_costmap.cpp)
 target_link_libraries(local_costmap ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
-add_executable(gps_path_only src/gps_path_only.cpp)
-target_link_libraries(gps_path_only ${catkin_LIBRARIES} ${OpenCV_LIBS})
-
-add_executable(region_state src/region_state_publisher.cpp)
-target_link_libraries(region_state ${catkin_LIBRARIES} ${OpenCV_LIBS})
-
-add_executable(zoom_state src/need_for_zoom.cpp)
-target_link_libraries(zoom_state ${catkin_LIBRARIES} ${OpenCV_LIBS})
-
-add_executable(traffic_state src/traffic_state_publisher.cpp)
-target_link_libraries(traffic_state ${catkin_LIBRARIES} ${OpenCV_LIBS})
-
-add_executable(parking_lot src/parking_lot.cpp)
-target_link_libraries(parking_lot ${catkin_LIBRARIES} ${OpenCV_LIBS})
 #parking_lot.cpp
 ##traffic_state_publisher.cpp
 ## Add cmake target dependencies of the library
