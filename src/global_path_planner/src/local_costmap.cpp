@@ -15,17 +15,6 @@ void poseCallback(const nav_msgs::Odometry::ConstPtr& msg){
     temp_q.pop();
 }
 
-void globalpathCallback(const nav_msgs::Path::ConstPtr& msg)
-{
-    if(!global_loaded)
-    {
-        std::queue<nav_msgs::Path::ConstPtr> temp_q;
-        temp_q.push(msg);
-        global_path = temp_q.front();
-        temp_q.pop();
-    }
-    global_loaded = true;
-}
 
 void obstacleCallback(const sensor_msgs::PointCloud2ConstPtr& scan)
 {
@@ -42,20 +31,13 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "local_costmap");
     ros::NodeHandle n;
     local_costmap = n.advertise<nav_msgs::OccupancyGrid>("local_costmap",1);
-
-    ros::Subscriber global_path_sub = n.subscribe("/global_path",10,globalpathCallback);
     // ros::Subscriber region_state_sub = n.subscribe("/state",10,stateCallback);
     // ros::Subscriber trffic_region_state_sub = n.subscribe("/traffic_region_state",10,trfficstateCallback);
     ros::Subscriber pose_sub = n.subscribe("/gps_utm_odom",10,poseCallback);
     ros::Subscriber obstacle_sub = n.subscribe("/Lidar/obj_pcl",10,obstacleCallback);
-    ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/global_map/static_map");
+    ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/map/static_map");
     nav_msgs::GetMap srv;
-    // ros::ServiceClient map_client2 = n.serviceClient<nav_msgs::GetMap>("/plain_map/static_map");
-    // nav_msgs::GetMap srv_plain;
-    // ros::ServiceClient map_client3 = n.serviceClient<nav_msgs::GetMap>("/region_map/static_map");
-    // nav_msgs::GetMap srv_region;
     std::string file_path = ros::package::getPath("global_path_planner");
-    // cv::Mat map_image = cv::imread(file_path+"/map_data/plain_map.png",1);
     ros::Rate r(10);//frequency
     bool state_ok = true;
     while (ros::ok())
@@ -120,13 +102,13 @@ int main(int argc, char **argv)
 
             double region_map_x = (current_x - global_map.info.origin.position.x)/resolution;
             double region_map_y = (current_y - global_map.info.origin.position.y)/resolution;
-
+            //extract from global map
             for(int i = 0;i < temp_local_map.info.width;i++)
             {
                 for(int j = 0;j<temp_local_map.info.height;j++)
                 {
                     double robot_x = (i - size_front)*resolution;
-                    double robot_y = (j-size_side)*resolution;
+                    double robot_y = (j - size_side)*resolution;
                     double rot_x = cos_th*(robot_x) - sin_th*(robot_y);
                     double rot_y = sin_th*(robot_x) + cos_th*(robot_y);
                     double global_x = -(rot_x-current_x);
@@ -143,14 +125,8 @@ int main(int argc, char **argv)
                     else
                     {
                         original_map_data = plain_map.data.at(map_index);
-                        if(original_map_data > 90)
-                        {
-//                            lane_vector_index.push_back(local_index);
-                        }
                     }
                     temp_data.at(local_index) = original_map_data;
-                    pixel_count ++;
-//                    r.sleep();
                 }
             }
             cv::Mat temp_map_image(temp_local_map.info.width,temp_local_map.info.height,CV_8UC1,cv::Scalar(0));
