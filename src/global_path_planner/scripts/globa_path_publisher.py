@@ -36,7 +36,7 @@ def listener(arg):
                temp_pose.header.frame_id = "/map"
                temp_pose.pose.position.x = x
                temp_pose.pose.position.y = y
-
+               temp_pose.
                global_path.poses.append(temp_pose)
                line = file.readline().strip()
                loaded = loaded + 1

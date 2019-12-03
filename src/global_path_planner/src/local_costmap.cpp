@@ -1,20 +1,27 @@
 ﻿#include "local_map.h"
 
+
+
+typedef struct 
+{
+    double x;
+    double y;
+    double th;
+}pose_2d;
+pose_2d current_pose;
 void poseCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
-    pose_count++;
-    std::queue<nav_msgs::Odometry::ConstPtr> temp_q;
-    temp_q.push(msg);
-    currentPose = temp_q.front();
-    if (msg->pose.covariance[0] > 1.0 || msg->pose.covariance[7] > 1.0 || msg->pose.covariance[14] > 2.0)
-    {
-        gps_stable = "unstable";
-    }
-    else
-    {
-        gps_stable = "stable";
-    }
-    temp_q.pop();
+    current_pose.x = msg->pose.pose.position.x;
+    current_pose.y = msg->pose.pose.position.y;
+    tf::Quaternion q(
+        currentPose->pose.pose.orientation.x,
+        currentPose->pose.pose.orientation.y,
+        currentPose->pose.pose.orientation.z,
+        currentPose->pose.pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    current_pose.th = yaw;
 }
 
 void obstacleCallback(const sensor_msgs::PointCloud2ConstPtr &scan)
@@ -27,11 +34,15 @@ void trfficstateCallback(const std_msgs::StringConstPtr &msg)
     trffic_state_string = msg->data.c_str();
 }
 
+
+
+// TODO: namespace 함수로 구현
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "local_costmap");
     ros::NodeHandle n;
     local_costmap = n.advertise<nav_msgs::OccupancyGrid>("local_costmap", 1);
+    //TODO: static map이 아닐경우 -> publish?
     ros::Subscriber pose_sub = n.subscribe("/gps_utm_odom", 10, poseCallback);
     ros::Subscriber obstacle_sub = n.subscribe("/Lidar/obj_pcl", 10, obstacleCallback);
     ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/map/static_map");
@@ -41,6 +52,7 @@ int main(int argc, char **argv)
     bool state_ok = true;
     while (ros::ok())
     {
+        // Check map loaded - publish되는 map 일 경우?
         if (!map_loaded)
         {
             if (map_client1.call(srv))
@@ -58,7 +70,6 @@ int main(int argc, char **argv)
                 continue;
             }
         }
-
         if (pose_count != 0)
         {
             if (state_ok)
@@ -70,6 +81,7 @@ int main(int argc, char **argv)
                 continue;
             }
 
+            //local map from static global map
             nav_msgs::OccupancyGrid temp_local_map;
             temp_local_map.header.frame_id = "/novatel";
             temp_local_map.header.stamp = ros::Time::now();
@@ -93,12 +105,13 @@ int main(int argc, char **argv)
             double roll, pitch, yaw;
             m.getRPY(roll, pitch, yaw);
             current_th = yaw;
+
+            //end pose update
+
+            
             double resolution = temp_local_map.info.resolution;
             double cos_th = cos(yaw);
             double sin_th = sin(yaw);
-            int pixel_count = 0;
-            std::vector<int> lane_vector_index;
-
             double region_map_x = (current_x - global_map.info.origin.position.x) / resolution;
             double region_map_y = (current_y - global_map.info.origin.position.y) / resolution;
             //extract from global map
@@ -190,7 +203,6 @@ int main(int argc, char **argv)
                             unsigned int pclmap_y = (global_y_ - global_map.info.origin.position.y) / resolution;
                             int map_index = pclmap_y * plain_map.info.width + pclmap_x;
                             cv::Vec3b out_of_map;
-
                             // if(point == 255)
                             // {
                             //     for(int r = 1;r<obsatcle_boundary;r = r+2)
@@ -553,7 +565,7 @@ int main(int argc, char **argv)
         {
             cout << "pose call back failed!" << endl;
         }
-        //        r.sleep();
+        r.sleep();
         ros::spinOnce();
     }
     ros::spin();
