@@ -1,9 +1,28 @@
 #include "local_map_include.h"
+
 class localMap
 {
 public:
     bool initialize(){}
+    tf::StampedTransform get_transform(string source_frame, string source_frame)
 };
+
+tf::StampedTransform localMap::get_transform(string source_frame, string source_frame)
+{
+    tf::TransformListener listener;
+    tf::StampedTransform transform;
+    try
+    {
+        listener.lookupTransform("source_frame", "source_frame", ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_ERROR("%s",ex.what());
+        ros::Duration(1.0).sleep();
+    }
+    return transform;
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "local_costmap");
@@ -17,8 +36,12 @@ int main(int argc, char **argv)
     std::string file_path = ros::package::getPath("global_path_planner");
     ros::Rate r(10); //frequency
     bool state_ok = true;
+    
     while (ros::ok())
     {
+        //TODO: 함수로 분리시키기 - tf 
+        tf::StampedTransform transform;
+        transform = localMap::get_transform("/map","/base_link")
         // Check map loaded - publish되는 map 일 경우?
         //code here
         //TODO: pose - tf에 상관없이 Update 방법?
