@@ -2,18 +2,44 @@
 
 class localMap
 {
+private:
+    nav_msgs::MapMetaData info;
+    tf::StampedTransform transform;
 public:
-    bool initialize(){}
-    tf::StampedTransform get_transform(string source_frame, string source_frame)
+    localMap(){}
+    localMap(nav_msgs::OccupancyGrid source_map)
+    {
+        this->info = source_map.info;
+    }
+    bool initialize(nav_msgs::OccupancyGrid source_map);
+    void set_transform(const char* source_frame, const char* child_frame);
+    static tf::StampedTransform get_transform(const char* source_frame, const char* child_frame);
+    static void Get_local_map(nav_msgs::OccupancyGrid *local_map);
 };
 
-tf::StampedTransform localMap::get_transform(string source_frame, string source_frame)
+void localMap::set_transform(const char* source_frame, const char* child_frame)
 {
     tf::TransformListener listener;
     tf::StampedTransform transform;
     try
     {
-        listener.lookupTransform("source_frame", "source_frame", ros::Time(0), transform);
+        listener.lookupTransform(source_frame, child_frame, ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_ERROR("%s",ex.what());
+        ros::Duration(1.0).sleep();
+    }
+    this->transform = transform;
+}
+
+tf::StampedTransform localMap::get_transform(const char* source_frame, const char* child_frame)
+{
+    tf::TransformListener listener;
+    tf::StampedTransform transform;
+    try
+    {
+        listener.lookupTransform(source_frame, child_frame, ros::Time(0), transform);
     }
     catch (tf::TransformException ex)
     {
@@ -36,12 +62,18 @@ int main(int argc, char **argv)
     std::string file_path = ros::package::getPath("global_path_planner");
     ros::Rate r(10); //frequency
     bool state_ok = true;
-    
+    std::string source_frame;
+    std::string child_frame;
+    std::string map_name;
+    n.getParam("/source_frame",source_frame);
+    n.getParam("/child_frame",child_frame;
+    n.getParam("/map_topic",map_name);
     while (ros::ok())
     {
         //TODO: 함수로 분리시키기 - tf 
         tf::StampedTransform transform;
-        transform = localMap::get_transform("/map","/base_link")
+        transform = localMap::get_transform("/map","/base_link");
+
         // Check map loaded - publish되는 map 일 경우?
         //code here
         //TODO: pose - tf에 상관없이 Update 방법?

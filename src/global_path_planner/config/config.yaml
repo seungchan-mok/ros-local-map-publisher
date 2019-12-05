@@ -1,2 +1,3 @@
-source_frame: '/map'
+source_frame: "/map"
 child_frame: "/base_link"
+map_topic: "/map"
