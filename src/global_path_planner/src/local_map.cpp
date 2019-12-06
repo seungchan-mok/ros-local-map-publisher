@@ -1,5 +1,7 @@
 #include "local_map_include.h"
-
+using namespace std;
+nav_msgs::OccupancyGrid global_map;
+nav_msgs::Odometry pose;
 class localMap
 {
 private:
@@ -49,35 +51,81 @@ tf::StampedTransform localMap::get_transform(const char* source_frame, const cha
     return transform;
 }
 
+void mapCallback(const nav_msgs::OccupancyGrid msg)
+{
+    global_map = msg;
+}
+
+void odomCallback(const nav_msgs::Odometry msg)
+{
+    pose = msg;
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "local_costmap");
     ros::NodeHandle n;
     ros::Publisher local_costmap = n.advertise<nav_msgs::OccupancyGrid>("local_map", 1);
-    //TODO: static map이 아닐경우 -> publish?
-    // ros::Subscriber pose_sub = n.subscribe("/gps_utm_odom", 10, poseCallback);
-    // ros::Subscriber obstacle_sub = n.subscribe("/Lidar/obj_pcl", 10, obstacleCallback);
-    ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/map/static_map");
-    nav_msgs::GetMap srv;
-    std::string file_path = ros::package::getPath("global_path_planner");
-    ros::Rate r(10); //frequency
-    bool state_ok = true;
+    // set parameter
     std::string source_frame;
     std::string child_frame;
     std::string map_name;
+    bool is_static_map;
+    std::string method;
+    std::string odom_topic;
     n.getParam("/source_frame",source_frame);
-    n.getParam("/child_frame",child_frame;
+    n.getParam("/child_frame",child_frame);
     n.getParam("/map_topic",map_name);
+    n.getParam("global_map_static",is_static_map);
+    n.getParam("method",method);
+    n.getParam("odom_topic",odom_topic);
+    //end set parameter
+
+    //TODO: static map이 아닐경우 -> publish?
+    // ros::Subscriber pose_sub = n.subscribe("/gps_utm_odom", 10, poseCallback);
+    // ros::Subscriber obstacle_sub = n.subscribe("/Lidar/obj_pcl", 10, obstacleCallback);
+    bool map_loaded = false;
+    if(is_static_map)
+    {
+        ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/map/static_map");
+        nav_msgs::GetMap srv;
+        if (map_client1.call(srv))
+        {
+            global_map = srv.response.map;
+            global_map.data = srv.response.map.data;
+            cout << global_map.info.width << " x " << global_map.info.height << endl;
+            map_loaded = true;
+        }
+    }
+    else
+    {
+        ros::Subscriber global_map_sub = n.subscribe(map_name, 10, mapCallback);
+    }
+    if(method == "odom")
+    {
+        ros::Subscriber pose_sub = n.subscribe(odom_topic, 10, odomCallback);
+    }
+    
+    std::string file_path = ros::package::getPath("global_path_planner");
+    ros::Rate r(10); //frequency
+    bool state_ok = true;
+    
     while (ros::ok())
     {
         //TODO: 함수로 분리시키기 - tf 
         tf::StampedTransform transform;
         transform = localMap::get_transform("/map","/base_link");
+        localMap local_costmap;
+        //TODO: get local map - tf
 
+        //TODO: get local map - odom
+
+        //TODO: local cost map
+
+        
+        //TODO: pub local map
         // Check map loaded - publish되는 map 일 경우?
         //code here
-        //TODO: pose - tf에 상관없이 Update 방법?
-        //TODO: yaml configuration file
         //
         r.sleep();
         ros::spinOnce();
