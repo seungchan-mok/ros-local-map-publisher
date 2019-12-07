@@ -5,4 +5,4 @@ method: "tf" # tf or odom only
 odom_topic: "/odom"
 cost_map: true
 pointcloud_topic: "/pcl"
-global_map_static: true
+global_map_static: true 

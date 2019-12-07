@@ -6,17 +6,20 @@ class localMap
 {
 private:
     nav_msgs::MapMetaData info;
-    tf::StampedTransform transform;
+    nav_msgs::Odometry pose;
 public:
     localMap(){}
     localMap(nav_msgs::OccupancyGrid source_map)
     {
         this->info = source_map.info;
     }
+    tf::StampedTransform transform;
     bool initialize(nav_msgs::OccupancyGrid source_map);
     void set_transform(const char* source_frame, const char* child_frame);
     static tf::StampedTransform get_transform(const char* source_frame, const char* child_frame);
-    static void Get_local_map(nav_msgs::OccupancyGrid *local_map);
+    static void Get_local_map(nav_msgs::OccupancyGrid *local_map,nav_msgs::Odometry arg_pose);
+    void Get_local_map(nav_msgs::OccupancyGrid *local_map);
+    void set_pose(nav_msgs::Odometry arg_pose);
 };
 
 void localMap::set_transform(const char* source_frame, const char* child_frame)
@@ -50,6 +53,22 @@ tf::StampedTransform localMap::get_transform(const char* source_frame, const cha
     }
     return transform;
 }
+
+void localMap::set_pose(nav_msgs::Odometry arg_pose)
+{
+    this->pose = arg_pose;
+}
+//odom method
+void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map, nav_msgs::Odometry arg_pose)
+{
+
+}
+
+void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
+{
+    this->transform.
+}
+
 
 void mapCallback(const nav_msgs::OccupancyGrid msg)
 {
@@ -119,10 +138,11 @@ int main(int argc, char **argv)
         //TODO: get local map - tf
 
         //TODO: get local map - odom
+        //TODO: odom 2 transform set
 
         //TODO: local cost map
 
-        
+
         //TODO: pub local map
         // Check map loaded - publish되는 map 일 경우?
         //code here
