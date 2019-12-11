@@ -58,15 +58,21 @@ void localMap::set_pose(nav_msgs::Odometry arg_pose)
 {
     this->pose = arg_pose;
 }
-//odom method
+/*
+odom method
+Get_local_map(nav_msgs::OccupancyGrid *local_map, nav_msgs::Odometry arg_pose)
+*/
 void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map, nav_msgs::Odometry arg_pose)
 {
 
 }
-
+/*
+tf method
+Get_local_map(nav_msgs::OccupancyGrid *local_map)
+*/
 void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
 {
-    this->transform.
+
 }
 
 
@@ -84,7 +90,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "local_costmap");
     ros::NodeHandle n;
-    ros::Publisher local_costmap = n.advertise<nav_msgs::OccupancyGrid>("local_map", 1);
+    ros::Publisher local_costmap_pub = n.advertise<nav_msgs::OccupancyGrid>("local_map", 1);
     // set parameter
     std::string source_frame;
     std::string child_frame;
@@ -133,15 +139,19 @@ int main(int argc, char **argv)
     {
         //TODO: 함수로 분리시키기 - tf 
         tf::StampedTransform transform;
-        transform = localMap::get_transform("/map","/base_link");
+        //transform = localMap::get_transform("/map","/base_link");
         localMap local_costmap;
+        local_costmap.set_transform(source_frame.c_str(),child_frame.c_str());
+        nav_msgs::OccupancyGrid temp;
+        local_costmap.Get_local_map(&temp);
+        local_costmap_pub.publish(temp);
         //TODO: get local map - tf
 
         //TODO: get local map - odom
         //TODO: odom 2 transform set
 
         //TODO: local cost map
-
+        //TODO: make sample bag - all method
 
         //TODO: pub local map
         // Check map loaded - publish되는 map 일 경우?
