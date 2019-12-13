@@ -14,6 +14,11 @@ public:
         this->info = source_map.info;
     }
     tf::StampedTransform transform;
+    int x_axis;
+    int y_axis;
+    void set_xy(int x,int y){ x_axis = x; y_axis = y; }
+    const char* m_source_frame;
+    const char* m_child_frame;
     bool initialize(nav_msgs::OccupancyGrid source_map);
     void set_transform(const char* source_frame, const char* child_frame);
     static tf::StampedTransform get_transform(const char* source_frame, const char* child_frame);
@@ -24,15 +29,20 @@ public:
 
 void localMap::set_transform(const char* source_frame, const char* child_frame)
 {
+    m_source_frame = source_frame;
+    m_child_frame = child_frame;
     tf::TransformListener listener;
     tf::StampedTransform transform;
     try
     {
+        cout << source_frame << endl;
+        cout << child_frame << endl;
         listener.lookupTransform(source_frame, child_frame, ros::Time(0), transform);
     }
     catch (tf::TransformException ex)
     {
         ROS_ERROR("%s",ex.what());
+        cout << "here!\n";
         ros::Duration(1.0).sleep();
     }
     this->transform = transform;
@@ -72,6 +82,118 @@ Get_local_map(nav_msgs::OccupancyGrid *local_map)
 */
 void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
 {
+    local_map->header.frame_id = m_child_frame;
+    local_map->header.stamp = ros::Time::now();
+    local_map->info.resolution = info.resolution;
+    local_map->info.height = 2*x_axis;
+    local_map->info.width = 2*y_axis;
+
+    std::vector<signed char> temp_data;
+    temp_data.assign(x_axis*2*y_axis*2,0);
+    double current_x = transform.getOrigin().getX();
+    double current_y = transform.getOrigin().getY();
+    double current_th;
+    tf::Quaternion q = transform.getRotation();
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    current_th = yaw;
+    double resolution = local_map->info.resolution;
+    double cos_th = cos(yaw);
+    double sin_th = sin(yaw);
+    for(int i = 0;i < local_map->info.width;i++)
+    {
+        for(int j = 0;j<local_map->info.height;j++)
+        {
+            double robot_x = (i - 2*x_axis)*resolution;
+            double robot_y = (j-y_axis)*resolution;
+            double rot_x = cos_th*(robot_x) - sin_th*(robot_y);
+            double rot_y = sin_th*(robot_x) + cos_th*(robot_y);
+            double global_x = -(rot_x-current_x);
+            double global_y = -(rot_y-current_y);
+            unsigned int map_x = (global_x - info.origin.position.x)/resolution;
+            unsigned int map_y = (global_y - info.origin.position.y)/resolution;
+            int map_index = map_y*info.width + map_x;
+            int local_index = local_map->info.width*local_map->info.height - (j*local_map->info.width + i) -1;
+            unsigned int original_map_data;
+            if(map_index >= info.height*info.width)
+            {
+                original_map_data = -1;
+            }
+            else
+            {
+                original_map_data = global_map.data.at(map_index);
+                if(original_map_data > 90)
+                {
+//                            lane_vector_index.push_back(local_index);
+                }
+            }
+            temp_data.at(local_index) = original_map_data;
+//                    r.sleep();
+        }
+    }
+    local_map->data = temp_data;
+    // double current_x = 
+    // nav_msgs::OccupancyGrid temp_local_map;
+    //         temp_local_map.header.frame_id = "/novatel";
+    //         temp_local_map.header.stamp = ros::Time::now();
+
+    //         temp_local_map.info.height = 2*size_side;
+    //         temp_local_map.info.width = size_front;
+    //         temp_local_map.info.resolution = global_map.info.resolution;
+    //         temp_local_map.info.origin.position.y = -(int)(size_side*global_map.info.resolution);
+
+    //         std::vector<signed char> temp_data;
+    //         temp_data.assign(size_side*2*size_front,0);
+    // double current_x = currentPose->pose.pose.position.x;
+    //         double current_y = currentPose->pose.pose.position.y;
+    //         double current_th;
+    //         tf::Quaternion q(
+    //                 currentPose->pose.pose.orientation.x,
+    //                 currentPose->pose.pose.orientation.y,
+    //                 currentPose->pose.pose.orientation.z,
+    //                 currentPose->pose.pose.orientation.w);
+    //         tf::Matrix3x3 m(q);
+    //         double roll, pitch, yaw;
+    //         m.getRPY(roll, pitch, yaw);
+    //         current_th = yaw;
+    //         double resolution = temp_local_map.info.resolution;
+    //         double cos_th = cos(yaw);
+    //         double sin_th = sin(yaw);
+    //         int pixel_count = 0;
+    //         std::vector<int> lane_vector_index;
+//     for(int i = 0;i < temp_local_map.info.width;i++)
+//     {
+//         for(int j = 0;j<temp_local_map.info.height;j++)
+//         {
+//             double robot_x = (i - size_front)*resolution;
+//             double robot_y = (j-size_side)*resolution;
+//             double rot_x = cos_th*(robot_x) - sin_th*(robot_y);
+//             double rot_y = sin_th*(robot_x) + cos_th*(robot_y);
+//             double global_x = -(rot_x-current_x);
+//             double global_y = -(rot_y-current_y);
+//             unsigned int map_x = (global_x - plain_map.info.origin.position.x)/resolution;
+//             unsigned int map_y = (global_y - plain_map.info.origin.position.y)/resolution;
+//             int map_index = map_y*plain_map.info.width + map_x;
+//             int local_index = temp_local_map.info.width*temp_local_map.info.height - (j*temp_local_map.info.width + i) -1;
+//             unsigned int original_map_data;
+//             if(map_index >= plain_map.info.height*plain_map.info.width)
+//             {
+//                 original_map_data = -1;
+//             }
+//             else
+//             {
+//                 original_map_data = plain_map.data.at(map_index);
+//                 if(original_map_data > 90)
+//                 {
+// //                            lane_vector_index.push_back(local_index);
+//                 }
+//             }
+//             temp_data.at(local_index) = original_map_data;
+//             pixel_count ++;
+// //                    r.sleep();
+//         }
+//     }
 
 }
 
@@ -143,8 +265,9 @@ int main(int argc, char **argv)
         localMap local_costmap;
         local_costmap.set_transform(source_frame.c_str(),child_frame.c_str());
         nav_msgs::OccupancyGrid temp;
-        local_costmap.Get_local_map(&temp);
+        local_costmap.Get_local_map(&temp);//tf method
         local_costmap_pub.publish(temp);
+        cout << "pub!"<<endl;
         //TODO: get local map - tf
 
         //TODO: get local map - odom

@@ -133,7 +133,7 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/global_path_planner.cpp
 # )
-add_executable(local_costmap src/local_costmap.cpp)
+add_executable(local_costmap src/local_map.cpp)
 target_link_libraries(local_costmap ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 #parking_lot.cpp
