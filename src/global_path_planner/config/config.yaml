@@ -1,4 +1,4 @@
-source_frame: "/map"
+source_frame: "/odom"
 child_frame: "/base_link"
 map_topic: "/map"
 method: "tf" # tf or odom only

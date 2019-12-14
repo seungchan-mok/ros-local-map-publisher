@@ -27,17 +27,16 @@ public:
     void set_pose(nav_msgs::Odometry arg_pose);
 };
 
-void localMap::set_transform(const char* source_frame, const char* child_frame)
+void localMap::set_transform(const char* source_frame, const char* target_frame)
 {
     m_source_frame = source_frame;
-    m_child_frame = child_frame;
+    m_child_frame = target_frame;
     tf::TransformListener listener;
     tf::StampedTransform transform;
     try
     {
-        cout << source_frame << endl;
-        cout << child_frame << endl;
-        listener.lookupTransform(source_frame, child_frame, ros::Time(0), transform);
+        listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
+        cout << "tf!\n";
     }
     catch (tf::TransformException ex)
     {
@@ -48,13 +47,13 @@ void localMap::set_transform(const char* source_frame, const char* child_frame)
     this->transform = transform;
 }
 
-tf::StampedTransform localMap::get_transform(const char* source_frame, const char* child_frame)
+tf::StampedTransform localMap::get_transform(const char* source_frame, const char* target_frame)
 {
     tf::TransformListener listener;
     tf::StampedTransform transform;
     try
     {
-        listener.lookupTransform(source_frame, child_frame, ros::Time(0), transform);
+        listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
     }
     catch (tf::TransformException ex)
     {
@@ -82,14 +81,16 @@ Get_local_map(nav_msgs::OccupancyGrid *local_map)
 */
 void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
 {
-    local_map->header.frame_id = m_child_frame;
     local_map->header.stamp = ros::Time::now();
+    local_map->header.frame_id = this->m_child_frame;
     local_map->info.resolution = info.resolution;
     local_map->info.height = 2*x_axis;
     local_map->info.width = 2*y_axis;
-
+    cout << "localmap : " << local_map->header << endl;
+    cout << "info : " << local_map->info << endl;
     std::vector<signed char> temp_data;
     temp_data.assign(x_axis*2*y_axis*2,0);
+    local_map->data.assign(x_axis*2*y_axis*2,0);
     double current_x = transform.getOrigin().getX();
     double current_y = transform.getOrigin().getY();
     double current_th;
@@ -129,9 +130,11 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
                 }
             }
             temp_data.at(local_index) = original_map_data;
+            local_map->data.at(local_index) = original_map_data;
 //                    r.sleep();
         }
     }
+    // local_map->data.assign
     local_map->data = temp_data;
     // double current_x = 
     // nav_msgs::OccupancyGrid temp_local_map;
@@ -234,18 +237,25 @@ int main(int argc, char **argv)
     bool map_loaded = false;
     if(is_static_map)
     {
-        ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/map/static_map");
+        ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/map");
         nav_msgs::GetMap srv;
+        cout << "static map!\n";
         if (map_client1.call(srv))
         {
             global_map = srv.response.map;
             global_map.data = srv.response.map.data;
             cout << global_map.info.width << " x " << global_map.info.height << endl;
             map_loaded = true;
+            cout << "map loaded!\n";
+        }
+        else
+        {
+            cout << "map load fail!\n";
         }
     }
     else
     {
+        cout << "publishing map!\n";
         ros::Subscriber global_map_sub = n.subscribe(map_name, 10, mapCallback);
     }
     if(method == "odom")
@@ -265,6 +275,7 @@ int main(int argc, char **argv)
         localMap local_costmap;
         local_costmap.set_transform(source_frame.c_str(),child_frame.c_str());
         nav_msgs::OccupancyGrid temp;
+
         local_costmap.Get_local_map(&temp);//tf method
         local_costmap_pub.publish(temp);
         cout << "pub!"<<endl;
