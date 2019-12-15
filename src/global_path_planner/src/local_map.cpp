@@ -35,6 +35,8 @@ void localMap::set_transform(const char* source_frame, const char* target_frame)
     tf::StampedTransform transform;
     try
     {
+        // listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
+        listener.waitForTransform(target_frame, source_frame, ros::Time(0), ros::Duration(10.0) );
         listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
         cout << "tf!\n";
     }
@@ -272,13 +274,16 @@ int main(int argc, char **argv)
         //TODO: 함수로 분리시키기 - tf 
         tf::StampedTransform transform;
         //transform = localMap::get_transform("/map","/base_link");
+
+        // //////////////////////////////////////////////////////////////////////////
         localMap local_costmap;
         local_costmap.set_transform(source_frame.c_str(),child_frame.c_str());
         nav_msgs::OccupancyGrid temp;
-
+        local_costmap.set_xy(10,10);
         local_costmap.Get_local_map(&temp);//tf method
         local_costmap_pub.publish(temp);
         cout << "pub!"<<endl;
+        ////////////////////////////////////////////////////////////////////////////
         //TODO: get local map - tf
 
         //TODO: get local map - odom
