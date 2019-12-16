@@ -1,5 +1,5 @@
 source_frame: "/map"
-child_frame: "/base_link"
+child_frame: "/base_footprint"
 map_topic: "/map"
 method: "tf" # tf or odom only
 odom_topic: "/odom"

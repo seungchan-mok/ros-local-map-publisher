@@ -6,7 +6,7 @@ class localMap
 {
 private:
     nav_msgs::MapMetaData info;
-    nav_msgs::Odometry pose;
+    nav_msgs::Odometry m_pose;
 public:
     localMap(){}
     localMap(nav_msgs::OccupancyGrid source_map)
@@ -67,7 +67,7 @@ tf::StampedTransform localMap::get_transform(const char* source_frame, const cha
 
 void localMap::set_pose(nav_msgs::Odometry arg_pose)
 {
-    this->pose = arg_pose;
+    this->m_pose = arg_pose;
 }
 /*
 odom method
@@ -92,45 +92,59 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
     local_map->info.map_load_time = ros::Time::now();
     // local_map->info.resolution = global_map.info.resolution;
     local_map->info.resolution = 0.05;
+    local_map->info.origin.position.x = (-(double)x_axis*(info.resolution));
+    local_map->info.origin.position.y = (-(double)y_axis*(info.resolution));
+    
     // cout << "localmap : " << local_map->header << endl;
     // cout << "info : " << local_map->info << endl;
     std::vector<signed char> temp_data;
     temp_data.assign(x_axis*2*y_axis*2,0);
     local_map->data.assign(x_axis*2*y_axis*2,0);
-    double current_x = transform.getOrigin().getX();
-    double current_y = transform.getOrigin().getY();
+    // double current_x = transform.getOrigin().getX();
+    // double current_y = transform.getOrigin().getY();
+    double current_x = pose.pose.pose.position.x;
+    double current_y = pose.pose.pose.position.y;
     cout << "cur xy : " << current_x << ", " << current_y << "\n";
     double current_th;
     tf::Quaternion q = transform.getRotation();
     tf::Matrix3x3 m(q);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
-    current_th = yaw;
+    current_th = -yaw;
     double resolution = local_map->info.resolution;
-    double cos_th = cos(yaw);
-    double sin_th = sin(yaw);
+    double cos_th = cos(current_th);
+    double sin_th = sin(current_th);
     for(int i = 0;i < local_map->info.width;i++)
     {
         for(int j = 0;j<local_map->info.height;j++)
         {
-            double robot_x = (i - 2*x_axis)*resolution;
-            double robot_y = (j-y_axis)*resolution;
+            double robot_x = (i - x_axis)*resolution;
+            double robot_y = (j - y_axis)*resolution;
+            // cout << "robot xy : " << robot_x << ", " << robot_y << "\n";
+            // cout << "current xy : " << current_x << ", " << current_y << "\n";
+
             double rot_x = cos_th*(robot_x) - sin_th*(robot_y);
             double rot_y = sin_th*(robot_x) + cos_th*(robot_y);
             double global_x = -(rot_x-current_x);
             double global_y = -(rot_y-current_y);
-            unsigned int map_x = (global_x - info.origin.position.x)/resolution;
-            unsigned int map_y = (global_y - info.origin.position.y)/resolution;
-            int map_index = map_y*info.width + map_x;
+            // cout << "global xy : " << global_x << ", " << global_y << "\n";
+
+            unsigned int map_x = (global_x - global_map.info.origin.position.x)/resolution;
+            unsigned int map_y = (global_y - global_map.info.origin.position.y)/resolution;
+            int map_index = map_y*global_map.info.width + map_x;
+            // int map_index = i*j;
             int local_index = local_map->info.width*local_map->info.height - (j*local_map->info.width + i) -1;
             unsigned int original_map_data;
-            if(map_index >= info.height*info.width)
+            // if(map_index <= info.height*info.width)
+            if(map_index > global_map.info.height* global_map.info.width)
             {
                 original_map_data = -1;
+                // cout << "-1";
             }
             else
             {
                 original_map_data = global_map.data.at(map_index);
+                // cout << map_index << "gg\n";
                 if(original_map_data > 90)
                 {
 //                            lane_vector_index.push_back(local_index);
@@ -216,6 +230,7 @@ void mapCallback(const nav_msgs::OccupancyGrid msg)
 void odomCallback(const nav_msgs::Odometry msg)
 {
     pose = msg;
+    cout << "pose : " << pose.pose.pose.position.x << ", " << pose.pose.pose.position.y << "\n";
 }
 
 int main(int argc, char **argv)
@@ -223,6 +238,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "local_costmap");
     ros::NodeHandle n;
     ros::Publisher local_costmap_pub = n.advertise<nav_msgs::OccupancyGrid>("/local_map", 1);
+    ros::Subscriber pose_sub = n.subscribe("/odom",10,odomCallback);
     // set parameter
     std::string source_frame;
     std::string child_frame;
@@ -281,10 +297,10 @@ int main(int argc, char **argv)
         //transform = localMap::get_transform("/map","/base_link");
 
         // //////////////////////////////////////////////////////////////////////////
-        localMap local_costmap;
+        localMap local_costmap(global_map);
         local_costmap.set_transform(source_frame.c_str(),child_frame.c_str());
         nav_msgs::OccupancyGrid temp;
-        local_costmap.set_xy(10,10);
+        local_costmap.set_xy(100,100);
         local_costmap.Get_local_map(&temp);//tf method
         local_costmap_pub.publish(temp);
         cout << "pub!"<<endl;
