@@ -88,13 +88,18 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
     local_map->info.resolution = info.resolution;
     local_map->info.height = 2*x_axis;
     local_map->info.width = 2*y_axis;
-    cout << "localmap : " << local_map->header << endl;
-    cout << "info : " << local_map->info << endl;
+    local_map->info.origin.orientation.w = 1.0;
+    local_map->info.map_load_time = ros::Time::now();
+    // local_map->info.resolution = global_map.info.resolution;
+    local_map->info.resolution = 0.05;
+    // cout << "localmap : " << local_map->header << endl;
+    // cout << "info : " << local_map->info << endl;
     std::vector<signed char> temp_data;
     temp_data.assign(x_axis*2*y_axis*2,0);
     local_map->data.assign(x_axis*2*y_axis*2,0);
     double current_x = transform.getOrigin().getX();
     double current_y = transform.getOrigin().getY();
+    cout << "cur xy : " << current_x << ", " << current_y << "\n";
     double current_th;
     tf::Quaternion q = transform.getRotation();
     tf::Matrix3x3 m(q);
@@ -137,7 +142,7 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
         }
     }
     // local_map->data.assign
-    local_map->data = temp_data;
+    // local_map->data = temp_data;
     // double current_x = 
     // nav_msgs::OccupancyGrid temp_local_map;
     //         temp_local_map.header.frame_id = "/novatel";
@@ -217,7 +222,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "local_costmap");
     ros::NodeHandle n;
-    ros::Publisher local_costmap_pub = n.advertise<nav_msgs::OccupancyGrid>("local_map", 1);
+    ros::Publisher local_costmap_pub = n.advertise<nav_msgs::OccupancyGrid>("/local_map", 1);
     // set parameter
     std::string source_frame;
     std::string child_frame;
@@ -239,7 +244,7 @@ int main(int argc, char **argv)
     bool map_loaded = false;
     if(is_static_map)
     {
-        ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/map");
+        ros::ServiceClient map_client1 = n.serviceClient<nav_msgs::GetMap>("/static_map");
         nav_msgs::GetMap srv;
         cout << "static map!\n";
         if (map_client1.call(srv))
