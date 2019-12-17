@@ -36,9 +36,9 @@ void localMap::set_transform(const char* source_frame, const char* target_frame)
     try
     {
         // listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
-        listener.waitForTransform(target_frame, source_frame, ros::Time(0), ros::Duration(10.0) );
+        listener.waitForTransform(target_frame, source_frame, ros::Time(0), ros::Duration(0.5) );
         listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
-        cout << "tf!\n";
+        // cout << "tf!\n";
     }
     catch (tf::TransformException ex)
     {
@@ -100,13 +100,23 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
     std::vector<signed char> temp_data;
     temp_data.assign(x_axis*2*y_axis*2,0);
     local_map->data.assign(x_axis*2*y_axis*2,0);
-    // double current_x = transform.getOrigin().getX();
-    // double current_y = transform.getOrigin().getY();
+    // double test_x = transform.
+    double current_x2 = -transform.getOrigin().getX();
+    double current_y2 = -transform.getOrigin().getY();
+
+    cout << "cur222 xy : " << current_x2 << ", " << current_y2 << "\n";
     double current_x = pose.pose.pose.position.x;
     double current_y = pose.pose.pose.position.y;
     cout << "cur xy : " << current_x << ", " << current_y << "\n";
     double current_th;
     tf::Quaternion q = transform.getRotation();
+    
+    // tf::Quaternion q;
+    // q.setW(pose.pose.pose.orientation.w);
+    // q.setW(pose.pose.pose.orientation.x);
+    // q.setW(pose.pose.pose.orientation.y);
+    // q.setW(pose.pose.pose.orientation.w);
+    // tf::Matrix3x3 m(q);
     tf::Matrix3x3 m(q);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
@@ -114,6 +124,7 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map)
     double resolution = local_map->info.resolution;
     double cos_th = cos(current_th);
     double sin_th = sin(current_th);
+
     for(int i = 0;i < local_map->info.width;i++)
     {
         for(int j = 0;j<local_map->info.height;j++)
@@ -230,7 +241,7 @@ void mapCallback(const nav_msgs::OccupancyGrid msg)
 void odomCallback(const nav_msgs::Odometry msg)
 {
     pose = msg;
-    cout << "pose : " << pose.pose.pose.position.x << ", " << pose.pose.pose.position.y << "\n";
+    // cout << "pose : " << pose.pose.pose.position.x << ", " << pose.pose.pose.position.y << "\n";
 }
 
 int main(int argc, char **argv)
@@ -287,7 +298,7 @@ int main(int argc, char **argv)
     }
     
     std::string file_path = ros::package::getPath("global_path_planner");
-    ros::Rate r(10); //frequency
+    ros::Rate r(100); //frequency
     bool state_ok = true;
     
     while (ros::ok())
