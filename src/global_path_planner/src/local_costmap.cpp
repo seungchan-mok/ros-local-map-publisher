@@ -1,13 +1,11 @@
 ﻿#include "local_map.h"
 
-
-
-typedef struct 
+typedef struct
 {
     double x;
     double y;
     double th;
-}pose_2d;
+} pose_2d;
 pose_2d current_pose;
 void poseCallback(const nav_msgs::Odometry::ConstPtr &msg)
 {
@@ -33,8 +31,6 @@ void trfficstateCallback(const std_msgs::StringConstPtr &msg)
 {
     trffic_state_string = msg->data.c_str();
 }
-
-
 
 // TODO: namespace 함수로 구현
 int main(int argc, char **argv)
@@ -108,7 +104,6 @@ int main(int argc, char **argv)
 
             //end pose update
 
-            
             double resolution = temp_local_map.info.resolution;
             double cos_th = cos(yaw);
             double sin_th = sin(yaw);
@@ -162,14 +157,14 @@ int main(int argc, char **argv)
                     }
                 }
             }
-            
-            //obstacle_pcl 
+
+            //obstacle_pcl
             double drawing_angle = current_th * 180 / PI;
             for (int i = 0; i < obstacle_pcl.size(); i++)
             {
                 double pcl_x = obstacle_pcl.at(i).x + lidar_gps_offset;
                 double pcl_y = obstacle_pcl.at(i).y;
-                
+
                 //TODO: name space로 분리
                 //                int local_index = temp_local_map.info.width*temp_local_map.info.height - (pixel_x*temp_local_map.info.width + pixel_y) -1;
                 if (!(pcl_x > -5.0 && pcl_x < 1.5 && pcl_y > -0.5 && pcl_y < 0.5))
