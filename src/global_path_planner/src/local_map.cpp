@@ -37,8 +37,8 @@ void localMap::set_transform(const char* source_frame, const char* target_frame,
     try
     {
         // listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
-        listener.waitForTransform(target_frame, source_frame, ros::Time(0), ros::Duration(tolerance));
-        listener.lookupTransform(target_frame, source_frame, ros::Time(0), transform);
+        listener.waitForTransform(source_frame, target_frame, ros::Time(0), ros::Duration(tolerance));
+        listener.lookupTransform(source_frame, target_frame, ros::Time(0), transform);
         // cout << "tf!\n";
     }
     catch (tf::TransformException ex)
@@ -76,24 +76,29 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map,std::string meth
     double current_y;
     double current_th;
     tf::Quaternion q;
+    double roll, pitch, yaw;
     if(method == "odom")
     {
         current_x = pose.pose.pose.position.x;
         current_y = pose.pose.pose.position.y;
-        current_th;
         q.setW(pose.pose.pose.orientation.w);
         q.setX(pose.pose.pose.orientation.x);
         q.setY(pose.pose.pose.orientation.y);
         q.setZ(pose.pose.pose.orientation.z);
+        tf::Matrix3x3 m(q);
+        m.getRPY(roll, pitch, yaw);
+        current_th = yaw;
     }
     else if(method == "tf")
     {
-
+        current_x = this->transform.getOrigin().getX();
+        current_y = this->transform.getOrigin().getY();
+        q = this->transform.getRotation();
+        tf::Matrix3x3 m(q);
+        m.getRPY(roll, pitch, yaw);
+        current_th = yaw;
     }
-    tf::Matrix3x3 m(q);
-    double roll, pitch, yaw;
-    m.getRPY(roll, pitch, yaw);
-    current_th = yaw;
+    
     double resolution = local_map->info.resolution;
     double cos_th = cos(current_th);
     double sin_th = sin(current_th);
