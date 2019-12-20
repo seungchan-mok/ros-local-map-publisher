@@ -69,6 +69,7 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map,std::string meth
     local_map->info.origin.orientation.w = 1.0;
     local_map->info.map_load_time = ros::Time::now();
     // local_map->info.resolution = global_map.info.resolution;
+    //TODO: maybe some problem in here! - origin
     local_map->info.origin.position.x = (-(double)x_axis*(info.resolution));
     local_map->info.origin.position.y = (-(double)y_axis*(info.resolution));
     local_map->data.assign(x_axis*2*y_axis*2,0);
@@ -212,11 +213,11 @@ int main(int argc, char **argv)
         }
         if(method == "tf")
         {
-        //TODO: get local map - tf
             local_costmap.set_transform(source_frame.c_str(),child_frame.c_str(),tolerance);
         }
         nav_msgs::OccupancyGrid temp;
         local_costmap.Get_local_map(&temp,method);
+        //TODO: rectangular map
         //TODO: cost map
         local_costmap_pub.publish(temp);
         ros::Time toc = ros::Time::now();
@@ -227,3 +228,4 @@ int main(int argc, char **argv)
     ros::spin();
     return 0;
 }
+
