@@ -1,10 +1,10 @@
 source_frame: "/map"
 child_frame: "/base_link"
 map_topic: "/map"
-method: "tf" # tf or odom only
+method: "odom" # tf or odom only
 odom_topic: "/odom"
 cost_map: true
 pointcloud_topic: "/pcl"
 global_map_static: true
-map_size: [2.0, 2.0] #x,y (meter)
+map_size: [5.0, 5.0] #x,y (meter)
 tolerance: 0.3
