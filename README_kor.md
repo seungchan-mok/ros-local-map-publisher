@@ -24,7 +24,13 @@ catkin_make
 ## Usage
 
 ```
-roslaunch roslaunch local_map_builder test.launch
+roslaunch local_map_builder test.launch
+```
+
+- 패키지를 확인하기 위한 sample bag을 제공합니다.
+
+```
+roslaunch local_map_builder test_with_bag.launch
 ```
 
 ## Configuration
@@ -42,15 +48,15 @@ map_size: [5.0, 5.0] #x,y (meter)
 tolerance: 0.3 #tf 방식을 이용할때 설정하는 시간오차입니다.
 ```
 
-`source_frame : "/map"`global map이 publish되고 있는 프레임입니다. 보통 `/map`으로 되어 있습니다.  
-`child_frame : "/base_link"`local_map 이 publish되어야 할 프레임입니다. 보통`/base_link`를 씁니다.  
-`map_topic : "/map"`map_server를 이용한 static_map이 아닌 map이 publish되고 있는 경우를 위한 topic이름입니다.  
-`method : "tf"` `tf` 방법, `odom`방법 두가지중 하나를 사용합니다.  
-`cost_map : true`laser scan을 이용한 cost_map의 기능을 on/off합니다.  
-`pointcloud_topic : /scan`cost map을 표시할 point cloud의 topic이름입니다. 3D pointcloud일 경우 z축은 무시됩니다.  
-`global_map_static: true`
-`map_size : [5.0 5.0]`
-`tolerance: 0.3`
+- `source_frame : "/map"`global map이 publish되고 있는 프레임입니다. 보통 `/map`으로 되어 있습니다.
+- `child_frame : "/base_link"`local_map 이 publish되어야 할 프레임입니다. 보통`/base_link`를 씁니다.
+- `map_topic : "/map"`map_server를 이용한 static_map이 아닌 map이 publish되고 있는 경우를 위한 topic이름입니다.  
+- `method : "tf"` `tf` 방법, `odom`방법 두가지중 하나를 사용합니다.
+- `cost_map : true`laser scan을 이용한 cost_map의 기능을 on/off합니다.
+- `pointcloud_topic : /scan`cost map을 표시할 point cloud의 topic이름입니다. 3D pointcloud일 경우 z축은 무시됩니다.
+- `global_map_static: true` map_server 를 이용한 static map을 사용할 경우 true, publish되는 topic일 경우 false를 입력 합니다.
+- `map_size : [5.0 5.0]` map size를 입력합니다. 만들어지는 map은 로봇의 원점 기준으로 +-meter만큼 생성됩니다.
+- `tolerance: 0.3` tf 방법을 사용할 경우 허용되는 시간 오차입니다.
 
 ### Configuration of `tf` Method
 
@@ -61,3 +67,11 @@ tf 방법을 사용할때는 다음과 같이 설정되어 있는것을 확인�
 
 [tf_tutorials](http://wiki.ros.org/tf/Tutorials)
 
+### Configuration of `odom` Method
+
+`odom` 방법을 사용할때는 publish되고 있는 odometry의 frame이 global map의 frame과 같아야 합니다.
+
+
+### Configuration of `combined` Method
+
+추가예정.
