@@ -1,7 +1,7 @@
 source_frame: "/map"
 child_frame: "/base_link"
 map_topic: "/map"
-method: "odom" # tf or odom only
+method: "tf" # tf or odom only
 odom_topic: "/odom"
 cost_map: true
 pointcloud_topic: "/pcl"

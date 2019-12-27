@@ -33,6 +33,8 @@ roslaunch local_map_builder test.launch
 roslaunch local_map_builder test_with_bag.launch
 ```
 
+- 제공된 sample bag으로 패키지를 실행합니다.
+
 ## Configuration
 
 ```
@@ -71,6 +73,11 @@ tf 방법을 사용할때는 다음과 같이 설정되어 있는것을 확인�
 
 `odom` 방법을 사용할때는 publish되고 있는 odometry의 frame이 global map의 frame과 같아야 합니다.
 
+- 내용추가예정.
+
+### Configuration of cost map
+
+추가예정.
 
 ### Configuration of `combined` Method
 
