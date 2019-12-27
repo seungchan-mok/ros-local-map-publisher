@@ -2,6 +2,7 @@
 using namespace std;
 nav_msgs::OccupancyGrid global_map;
 nav_msgs::Odometry pose;
+pcl::PointCloud <pcl::PointXYZI> obstacle_pcl;
 class localMap
 {
 private:
@@ -25,8 +26,35 @@ public:
     const char* m_child_frame;
     void set_transform(const char* source_frame, const char* child_frame,double tolerance);
     void Get_local_map(nav_msgs::OccupancyGrid *local_map,std::string method);
+    void costmap(nav_msgs::OccupancyGrid *local_map);
     void set_pose(nav_msgs::Odometry arg_pose);
 };
+
+void costmap(nav_msgs::OccupancyGrid *local_map)
+{
+    //TODO: cost map
+    // cv::Mat temp_map_image(temp_local_map.info.width,temp_local_map.info.height,CV_8UC1,cv::Scalar(0));
+    // cv::Mat temp_obstacle_image(temp_local_map.info.width,temp_local_map.info.height,CV_8UC1,cv::Scalar(0));
+    // for(int i = 0;i<temp_local_map.info.width;i++)
+    // {
+    //     for(int j = 0;j<temp_local_map.info.height;j++)
+    //     {
+    //         int local_index = temp_local_map.info.width*temp_local_map.info.height - (j*temp_local_map.info.width + i) -1;
+    //         temp_map_image.at<unsigned char>(i,j) = (int)temp_data.at(local_index);
+    //     }
+    // }
+    // for(int i = 0;i<temp_local_map.info.width;i++)
+    // {
+    //     for(int j = 0;j<temp_local_map.info.height;j++)
+    //     {
+    //         int local_index = temp_local_map.info.width*temp_local_map.info.height - (j*temp_local_map.info.width + i) -1;
+    //         if((int)temp_data.at(local_index) > 20 || (int)temp_data.at(local_index) == -1)
+    //         {
+    //             cv::circle(temp_map_image, cv::Point(j,i),lane_boundary, cv::Scalar(100),CV_FILLED, 8);
+    //         }
+    //     }
+    // }
+}
 
 void localMap::set_transform(const char* source_frame, const char* target_frame,double tolerance)
 {

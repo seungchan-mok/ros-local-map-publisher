@@ -8,32 +8,31 @@
 
 ## Installation
 
-### Dependency Installation
-```
-sudo apt-get install ros-kinetic-map-server ros-kinetic-nav-msgs ros-kinetic-geometry-msgs
-```
-
-### Installation to your Workspace
+Dependency  
 
 ```
-cd {your work space}
-git clone https://github.com/msc9533/ros-local-map-publisher.git
-catkin_make
+$ sudo apt-get install ros-kinetic-map-server ros-kinetic-nav-msgs ros-kinetic-geometry-msgs
+```
+
+```
+$ cd {your work space}
+$ git clone https://github.com/msc9533/ros-local-map-publisher.git
+$ catkin_make
 ```
 
 ## Usage
 
-```
-roslaunch local_map_builder test.launch
-```
-
-- 패키지를 확인하기 위한 sample bag을 제공합니다.
+- 패키지를 확인하기 위한 sample bag을 제공합니다. 제공된 sample bag으로 패키지를 실행합니다.
 
 ```
-roslaunch local_map_builder test_with_bag.launch
+$ roslaunch local_map_builder test_with_bag.launch
 ```
 
-- 제공된 sample bag으로 패키지를 실행합니다.
+- bag이 아닌 자신의 환경에서 이 패키지를 활용하고자 할때는 아래의 명령줄을 이용합니다.
+
+```
+$ roslaunch local_map_builder test.launch
+```
 
 ## Configuration
 
