@@ -8,3 +8,4 @@ pointcloud_topic: "/pcl"
 global_map_static: true
 map_size: [5.0, 5.0] #x,y (meter)
 tolerance: 0.3
+cost: 0.2

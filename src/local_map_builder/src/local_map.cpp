@@ -26,34 +26,43 @@ public:
     const char* m_child_frame;
     void set_transform(const char* source_frame, const char* child_frame,double tolerance);
     void Get_local_map(nav_msgs::OccupancyGrid *local_map,std::string method);
-    void costmap(nav_msgs::OccupancyGrid *local_map);
+    void costmap(nav_msgs::OccupancyGrid *local_map,double lane_boundary);
     void set_pose(nav_msgs::Odometry arg_pose);
 };
 
-void costmap(nav_msgs::OccupancyGrid *local_map)
+void localMap::costmap(nav_msgs::OccupancyGrid *local_map,double lane_boundary)
 {
     //TODO: cost map
-    // cv::Mat temp_map_image(temp_local_map.info.width,temp_local_map.info.height,CV_8UC1,cv::Scalar(0));
-    // cv::Mat temp_obstacle_image(temp_local_map.info.width,temp_local_map.info.height,CV_8UC1,cv::Scalar(0));
-    // for(int i = 0;i<temp_local_map.info.width;i++)
-    // {
-    //     for(int j = 0;j<temp_local_map.info.height;j++)
-    //     {
-    //         int local_index = temp_local_map.info.width*temp_local_map.info.height - (j*temp_local_map.info.width + i) -1;
-    //         temp_map_image.at<unsigned char>(i,j) = (int)temp_data.at(local_index);
-    //     }
-    // }
-    // for(int i = 0;i<temp_local_map.info.width;i++)
-    // {
-    //     for(int j = 0;j<temp_local_map.info.height;j++)
-    //     {
-    //         int local_index = temp_local_map.info.width*temp_local_map.info.height - (j*temp_local_map.info.width + i) -1;
-    //         if((int)temp_data.at(local_index) > 20 || (int)temp_data.at(local_index) == -1)
-    //         {
-    //             cv::circle(temp_map_image, cv::Point(j,i),lane_boundary, cv::Scalar(100),CV_FILLED, 8);
-    //         }
-    //     }
-    // }
+    int lane_boundary_pixel = (int)(lane_boundary / local_map->info.resolution);
+    cv::Mat temp_map_image(local_map->info.width,local_map->info.height,CV_8UC1,cv::Scalar(0));
+    cv::Mat temp_obstacle_image(local_map->info.width,local_map->info.height,CV_8UC1,cv::Scalar(0));
+    for(int i = 0;i<local_map->info.width;i++)
+    {
+        for(int j = 0;j<local_map->info.height;j++)
+        {
+            int local_index = local_map->info.width*local_map->info.height - (j*local_map->info.width + i) -1;
+            temp_map_image.at<unsigned char>(i,j) = (int)local_map->data.at(local_index);
+        }
+    }
+    for(int i = 0;i<local_map->info.width;i++)
+    {
+        for(int j = 0;j<local_map->info.height;j++)
+        {
+            int local_index = local_map->info.width*local_map->info.height - (j*local_map->info.width + i) -1;
+            if((int)local_map->data.at(local_index) > 20 || (int)local_map->data.at(local_index) == -1)
+            {
+                cv::circle(temp_map_image, cv::Point(j,i),lane_boundary_pixel, cv::Scalar(100),CV_FILLED, 8);
+            }
+        }
+    }
+    for(int i = 0;i<local_map->info.width;i++)
+    {
+        for(int j = 0;j<local_map->info.height;j++)
+        {
+            int local_index = local_map->info.width*local_map->info.height - (j*local_map->info.width + i) -1;
+            local_map->data.at(local_index) = (int)temp_map_image.at<unsigned char>(i,j);
+        }
+    }
 }
 
 void localMap::set_transform(const char* source_frame, const char* target_frame,double tolerance)
@@ -186,6 +195,7 @@ int main(int argc, char **argv)
     std::string odom_topic;
     std::vector<double> map_size;
     double tolerance;
+    double cost_meter;
     n.getParam("/source_frame",source_frame);
     n.getParam("/child_frame",child_frame);
     n.getParam("/map_topic",map_name);
@@ -194,6 +204,7 @@ int main(int argc, char **argv)
     n.getParam("odom_topic",odom_topic);
     n.getParam("map_size",map_size);
     n.getParam("tolerance",tolerance);
+    n.getParam("cost",cost_meter);
     
     ros::Subscriber pose_sub = n.subscribe(odom_topic.c_str(),10,odomCallback);
     //end set parameter
@@ -245,6 +256,7 @@ int main(int argc, char **argv)
         }
         nav_msgs::OccupancyGrid temp;
         local_costmap.Get_local_map(&temp,method);
+        local_costmap.costmap(&temp,cost_meter);
         //TODO: rectangular map
         //TODO: cost map
         local_costmap_pub.publish(temp);
