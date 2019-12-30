@@ -5,7 +5,7 @@ method: "odom" # tf or odom only
 odom_topic: "/odom"
 cost_map: true
 pointcloud_topic: "/pcl"
-global_map_static: true
+global_map_static: false
 map_size: [5.0, 5.0] #x,y (meter)
 tolerance: 0.3
 cost: 0.2 # meter

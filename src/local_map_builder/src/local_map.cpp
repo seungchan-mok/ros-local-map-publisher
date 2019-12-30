@@ -173,6 +173,7 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map,std::string meth
 void mapCallback(const nav_msgs::OccupancyGrid msg)
 {
     global_map = msg;
+    cout << "map callback!!\n\n\n";
 }
 
 void odomCallback(const nav_msgs::Odometry msg)
@@ -209,6 +210,7 @@ int main(int argc, char **argv)
     n.getParam("update_frequency",update_frequency);
     
     ros::Subscriber pose_sub = n.subscribe(odom_topic.c_str(),10,odomCallback);
+    ros::Subscriber global_map_sub = n.subscribe(map_name, 10, mapCallback);
     sleep(1);
     //end set parameter
     // ros::Subscriber pose_sub = n.subscribe("/gps_utm_odom", 10, poseCallback);
@@ -239,7 +241,7 @@ int main(int argc, char **argv)
     else
     {
         cout << "publishing map!\n";
-        ros::Subscriber global_map_sub = n.subscribe(map_name, 10, mapCallback);
+        // ros::Subscriber global_map_sub = n.subscribe(map_name, 10, mapCallback);
     }
     
     std::string file_path = ros::package::getPath("global_path_planner");
@@ -252,6 +254,7 @@ int main(int argc, char **argv)
         if(!is_static_map)
         {
             local_costmap.initialize(global_map);
+            local_costmap.set_xy(map_size.at(0),map_size.at(1));
         }
         if(method == "tf")
         {
@@ -261,6 +264,7 @@ int main(int argc, char **argv)
         local_costmap.Get_local_map(&temp,method);
         local_costmap.costmap(&temp,cost_meter);
         //TODO: rectangular map
+        //TODO: combined method
         local_costmap_pub.publish(temp);
         ros::Time toc = ros::Time::now();
         ros::Duration cost_time = toc-tic;
