@@ -196,6 +196,7 @@ int main(int argc, char **argv)
     std::vector<double> map_size;
     double tolerance;
     double cost_meter;
+    int update_frequency;
     n.getParam("/source_frame",source_frame);
     n.getParam("/child_frame",child_frame);
     n.getParam("/map_topic",map_name);
@@ -205,8 +206,10 @@ int main(int argc, char **argv)
     n.getParam("map_size",map_size);
     n.getParam("tolerance",tolerance);
     n.getParam("cost",cost_meter);
+    n.getParam("update_frequency",update_frequency);
     
     ros::Subscriber pose_sub = n.subscribe(odom_topic.c_str(),10,odomCallback);
+    sleep(1);
     //end set parameter
     // ros::Subscriber pose_sub = n.subscribe("/gps_utm_odom", 10, poseCallback);
     // ros::Subscriber obstacle_sub = n.subscribe("/Lidar/obj_pcl", 10, obstacleCallback);
@@ -240,7 +243,7 @@ int main(int argc, char **argv)
     }
     
     std::string file_path = ros::package::getPath("global_path_planner");
-    ros::Rate r(100); //frequency
+    ros::Rate r(update_frequency); //frequency
     bool state_ok = true;
     while (ros::ok())
     {
@@ -258,11 +261,11 @@ int main(int argc, char **argv)
         local_costmap.Get_local_map(&temp,method);
         local_costmap.costmap(&temp,cost_meter);
         //TODO: rectangular map
-        //TODO: cost map
         local_costmap_pub.publish(temp);
         ros::Time toc = ros::Time::now();
         ros::Duration cost_time = toc-tic;
         cout << "cost : " << cost_time << "\n";
+        r.sleep();
         ros::spinOnce();
     }
     ros::spin();

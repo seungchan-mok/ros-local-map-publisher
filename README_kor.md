@@ -59,7 +59,7 @@ cost: 0.2
 - `global_map_static: true` map_server 를 이용한 static map을 사용할 경우 true, publish되는 topic일 경우 false를 입력 합니다.
 - `map_size : [5.0 5.0]` map size를 입력합니다. 만들어지는 map은 로봇의 원점 기준으로 +-meter만큼 생성됩니다.
 - `tolerance: 0.3` tf 방법을 사용할 경우 허용되는 시간 오차입니다.
-- `cost: 0.2` : laser scan 등을 
+- `cost: 0.2` : laser scan 등을 이용한 주행가능한 
 
 ### Configuration of `tf` Method
 
