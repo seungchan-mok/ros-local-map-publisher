@@ -1,7 +1,12 @@
 # ros-local-map-builder
 
 ## Overview
+
+<center>
+
 ![](https://github.com/msc9533/ros-local-map-publisher/blob/master/doc/capture_rviz.png?raw=true)
+
+</center>
 
 [costmap_2d](http://wiki.ros.org/costmap_2d)와 비슷한 기능을 하는 패키지 입니다. ros tf tranform을 이용한 global map에서 base_link frame의 local map을 추출하는 기능을 제공합니다. 
 하지만 `costmap_2d` 패키지와 달리 `odom`을 이용한 방식을 제공합니다. 이 방식은 `tf`와 달리 시간에 대한 제약을 받지 않습니다.  
@@ -65,8 +70,11 @@ cost: 0.2
 
 tf 방법을 사용할때는 다음과 같이 설정되어 있는것을 확인하여야 합니다.
 
+<center>
 
 ![](https://github.com/msc9533/ros-local-map-publisher/blob/master/doc/tf_tree.png?raw=true)
+
+</center>
 
 [tf_tutorials](http://wiki.ros.org/tf/Tutorials)
 
