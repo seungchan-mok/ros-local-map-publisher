@@ -2,11 +2,8 @@
 
 ## Overview
 
-<center>
+![](./doc/capture_rviz.png)
 
-![](https://github.com/msc9533/ros-local-map-publisher/blob/master/doc/capture_rviz.png?raw=true)
-
-</center>
 This package is similar package with [costmap_2d](http://wiki.ros.org/costmap_2d). It provides extracting local map of 'base_link' frame from global map by using ros tf transform.  
 But It also provide `odom` method. This method has no limitation with timestamp and more fast.
 
@@ -70,11 +67,7 @@ cost: 0.2
 
 When using the tf method, make sure that it is set as follows,
 
-<center>
-
-![](https://github.com/msc9533/ros-local-map-publisher/blob/master/doc/tf_tree.png?raw=true)
-
-</center>
+![](./doc/tf_tree.png)
 
 [tf_tutorials](http://wiki.ros.org/tf/Tutorials)
 
