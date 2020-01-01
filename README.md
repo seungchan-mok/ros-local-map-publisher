@@ -47,7 +47,7 @@ cost_map: true
 pointcloud_topic: "/pcl"
 global_map_static: true
 map_size: [5.0, 5.0] #x,y (meter)
-tolerance: 0.3 #tf 방식을 이용할때 설정하는 시간오차입니다.
+tolerance: 0.3 #tolerance of tf transform
 cost: 0.2
 ```
 
