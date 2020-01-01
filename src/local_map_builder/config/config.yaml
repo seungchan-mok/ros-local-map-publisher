@@ -6,7 +6,7 @@ odom_topic: "/odom"
 cost_map: true
 pointcloud_topic: "/pcl"
 global_map_static: false
-map_size: [1.0, 1.0] #x,y (meter)
+map_size: [5.0, 3.0] #x,y (meter)
 tolerance: 0.3
 cost: 0.2 # meter
 update_frequency: 10 # Hz

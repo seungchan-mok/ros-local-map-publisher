@@ -107,8 +107,10 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map,std::string meth
     local_map->info.map_load_time = ros::Time::now();
     // local_map->info.resolution = global_map.info.resolution;
     //TODO: maybe some problem in here! - origin
-    local_map->info.origin.position.x = (-(double)x_axis*(info.resolution));
-    local_map->info.origin.position.y = (-(double)y_axis*(info.resolution));
+    // local_map->info.origin.position.x = (-(double)x_axis*(info.resolution));
+    // local_map->info.origin.position.y = (-(double)y_axis*(info.resolution));
+    local_map->info.origin.position.y = (-(double)x_axis*(info.resolution));
+    local_map->info.origin.position.x = (-(double)y_axis*(info.resolution));
     local_map->data.assign(x_axis*2*y_axis*2,0);
     double current_x;
     double current_y;
@@ -141,14 +143,16 @@ void localMap::Get_local_map(nav_msgs::OccupancyGrid *local_map,std::string meth
     double cos_th = cos(current_th);
     double sin_th = sin(current_th);
     double robot_x,robot_y,rot_x,rot_y,global_x,global_y;
+    robot_x = y_axis;
+    robot_y = x_axis;
     unsigned int map_x,map_y;
     int map_index,local_index;
     for(int i = 0;i < local_map->info.width;i++)
     {
         for(int j = 0;j<local_map->info.height;j++)
         {
-            rot_x = cos_th*((i - x_axis)*resolution) - sin_th*((j - y_axis)*resolution);
-            rot_y = sin_th*((i - x_axis)*resolution) + cos_th*((j - y_axis)*resolution);
+            rot_x = cos_th*(((double)i - robot_x)*resolution) - sin_th*(((double)j - robot_y)*resolution);
+            rot_y = sin_th*(((double)i - robot_x)*resolution) + cos_th*(((double)j - robot_y)*resolution);
             map_x = ((current_x-rot_x) - global_map.info.origin.position.x)/resolution;
             map_y = ((current_y-rot_y) - global_map.info.origin.position.y)/resolution;
             map_index = map_y*global_map.info.width + map_x;
@@ -236,7 +240,7 @@ int main(int argc, char **argv)
             return 1;
         }
         local_costmap.initialize(global_map);
-        local_costmap.set_xy(map_size.at(0),map_size.at(1));
+        local_costmap.set_xy(map_size.at(1),map_size.at(0));
     }
     else
     {
@@ -254,7 +258,7 @@ int main(int argc, char **argv)
         if(!is_static_map)
         {
             local_costmap.initialize(global_map);
-            local_costmap.set_xy(map_size.at(0),map_size.at(1));
+            local_costmap.set_xy(map_size.at(1),map_size.at(0));
         }
         if(method == "tf")
         {
